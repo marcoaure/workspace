@@ -1,0 +1,16 @@
+{
+  "monitors": [
+    {
+      "name": "Alienware AW2725DF",
+      "match": "Alienware|AW2725",
+      "windows_input": 15,
+      "mac_input": 19
+    },
+    {
+      "name": "Samsung UR550",
+      "match": "Generic PnP",
+      "windows_input": 15,
+      "mac_input": 5
+    }
+  ]
+}
