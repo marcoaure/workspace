@@ -33,13 +33,13 @@ if ($config.peripherals -and $config.peripherals.Count -gt 0) {
 
     foreach ($periph in $config.peripherals) {
         $channel = if ($Reverse) { $periph.windows_channel } else { $periph.mac_channel }
-        $vid = [Convert]::ToUInt16($periph.vid, 16)
-        $pid = [Convert]::ToUInt16($periph.pid, 16)
+        $devVid = [Convert]::ToUInt16($periph.vid, 16)
+        $devPid = [Convert]::ToUInt16($periph.pid, 16)
         $featureIndex = [byte]$periph.change_host_feature_index
         $hostIndex = [byte]$channel
 
         try {
-            $ok = [HIDSwitch]::ChangeHost($vid, $pid, $featureIndex, $hostIndex)
+            $ok = [HIDSwitch]::ChangeHost($devVid, $devPid, $featureIndex, $hostIndex)
             if ($ok) {
                 Write-Host "  [OK] $($periph.name) -> canal $($channel + 1)" -ForegroundColor Green
             } else {
