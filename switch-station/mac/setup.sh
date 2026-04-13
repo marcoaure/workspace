@@ -261,20 +261,28 @@ fi
 cat >> "$HS_INIT" << EOF
 
 $HS_MARKER
--- Ctrl+Opt+W = troca pro Windows | Ctrl+Opt+M = volta pro Mac
+-- Ctrl+Opt+W = troca TUDO pro Windows | Ctrl+Opt+M = volta TUDO pro Mac
+-- Ctrl+Opt+1 = só periféricos pro Windows | Ctrl+Opt+3 = só periféricos pro Mac
 local switchStation = "$SCRIPT_DIR/switch-to-windows.sh"
+local switchPeripherals = "$SCRIPT_DIR/switch-peripherals.sh"
 hs.hotkey.bind({"ctrl", "alt"}, "W", function()
     hs.task.new("/bin/bash", nil, {switchStation}):start()
 end)
 hs.hotkey.bind({"ctrl", "alt"}, "M", function()
     hs.task.new("/bin/bash", nil, {switchStation, "--reverse"}):start()
 end)
+hs.hotkey.bind({"ctrl", "alt"}, "1", function()
+    hs.task.new("/bin/bash", nil, {switchPeripherals, "windows"}):start()
+end)
+hs.hotkey.bind({"ctrl", "alt"}, "3", function()
+    hs.task.new("/bin/bash", nil, {switchPeripherals, "mac"}):start()
+end)
 $HS_MARKER
 EOF
 
 # Abrir Hammerspoon se não estiver rodando
 open -a Hammerspoon 2>/dev/null || true
-echo "  [OK] Hotkeys registradas via Hammerspoon: ⌃⌥W (Windows) / ⌃⌥M (Mac)"
+echo "  [OK] Hotkeys registradas via Hammerspoon"
 echo "  [!] Na primeira vez: habilitar Hammerspoon em System Settings > Privacy > Accessibility"
 
 # ── Resumo ────────────────────────────────────────────────────────
@@ -286,9 +294,8 @@ echo "    windows   -> troca tudo pro Windows"
 echo "    mac-fix   -> volta pro Mac (emergência)"
 echo ""
 echo "  Hotkeys globais (funcionam de qualquer app):"
-echo "    ⌃⌥W (Ctrl+Opt+W) -> troca pro Windows"
-echo "    ⌃⌥M (Ctrl+Opt+M) -> volta pro Mac"
-echo ""
-echo "  Próximo passo: rode ./discover.sh para verificar"
-echo "  os display numbers e valores de input."
+echo "    ⌃⌥W (Ctrl+Opt+W) -> troca TUDO pro Windows"
+echo "    ⌃⌥M (Ctrl+Opt+M) -> volta TUDO pro Mac"
+echo "    ⌃⌥1 (Ctrl+Opt+1) -> só periféricos pro Windows (split-screen)"
+echo "    ⌃⌥3 (Ctrl+Opt+3) -> só periféricos pro Mac (split-screen)"
 echo ""
