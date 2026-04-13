@@ -263,8 +263,10 @@ cat >> "$HS_INIT" << EOF
 $HS_MARKER
 -- Ctrl+Opt+W = troca TUDO pro Windows | Ctrl+Opt+M = volta TUDO pro Mac
 -- Ctrl+Opt+1 = só periféricos pro Windows | Ctrl+Opt+3 = só periféricos pro Mac
+-- Ctrl+Opt+S = split-screen (Alienware=Win, Samsung=Mac, periféricos=Mac)
 local switchStation = "$SCRIPT_DIR/switch-to-windows.sh"
 local switchPeripherals = "$SCRIPT_DIR/switch-peripherals.sh"
+local splitScreen = "$SCRIPT_DIR/split-screen.sh"
 hs.hotkey.bind({"ctrl", "alt"}, "W", function()
     hs.task.new("/bin/bash", nil, {switchStation}):start()
 end)
@@ -276,6 +278,9 @@ hs.hotkey.bind({"ctrl", "alt"}, "1", function()
 end)
 hs.hotkey.bind({"ctrl", "alt"}, "3", function()
     hs.task.new("/bin/bash", nil, {switchPeripherals, "mac"}):start()
+end)
+hs.hotkey.bind({"ctrl", "alt"}, "S", function()
+    hs.task.new("/bin/bash", nil, {splitScreen}):start()
 end)
 $HS_MARKER
 EOF
@@ -296,6 +301,7 @@ echo ""
 echo "  Hotkeys globais (funcionam de qualquer app):"
 echo "    ⌃⌥W (Ctrl+Opt+W) -> troca TUDO pro Windows"
 echo "    ⌃⌥M (Ctrl+Opt+M) -> volta TUDO pro Mac"
-echo "    ⌃⌥1 (Ctrl+Opt+1) -> só periféricos pro Windows (split-screen)"
-echo "    ⌃⌥3 (Ctrl+Opt+3) -> só periféricos pro Mac (split-screen)"
+echo "    ⌃⌥S (Ctrl+Opt+S) -> split-screen (Alienware=Win, Samsung=Mac)"
+echo "    ⌃⌥1 (Ctrl+Opt+1) -> só periféricos pro Windows"
+echo "    ⌃⌥3 (Ctrl+Opt+3) -> só periféricos pro Mac"
 echo ""

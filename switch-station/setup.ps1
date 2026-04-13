@@ -53,6 +53,7 @@ if (-not $startMenu) {
 $shortcuts = @(
     @{ Name = 'Switch to Mac';            Bat = 'switch-to-mac.bat';          Hotkey = 'Ctrl+Alt+M'; Desc = 'Troca tudo pro Mac' },
     @{ Name = 'Switch to Windows';        Bat = 'switch-to-windows.bat';      Hotkey = 'Ctrl+Alt+W'; Desc = 'Volta tudo pro Windows' },
+    @{ Name = 'Split Screen';             Bat = 'split-screen.bat';           Hotkey = 'Ctrl+Alt+S'; Desc = 'Alienware=Win, Samsung=Mac' },
     @{ Name = 'Peripherals to Windows';   Bat = 'peripherals-to-windows.bat'; Hotkey = 'Ctrl+Alt+1'; Desc = 'So perifericos pro Windows' },
     @{ Name = 'Peripherals to Mac';       Bat = 'peripherals-to-mac.bat';     Hotkey = 'Ctrl+Alt+3'; Desc = 'So perifericos pro Mac' }
 )
@@ -76,8 +77,9 @@ Write-Host ''
 Write-Host '  Hotkeys globais (funcionam de qualquer lugar):' -ForegroundColor Cyan
 Write-Host '    Ctrl+Alt+M  -> troca TUDO pro Mac' -ForegroundColor White
 Write-Host '    Ctrl+Alt+W  -> troca TUDO pro Windows' -ForegroundColor White
-Write-Host '    Ctrl+Alt+1  -> so perifericos pro Windows (split-screen)' -ForegroundColor White
-Write-Host '    Ctrl+Alt+3  -> so perifericos pro Mac (split-screen)' -ForegroundColor White
+Write-Host '    Ctrl+Alt+S  -> split-screen (Alienware=Win, Samsung=Mac)' -ForegroundColor White
+Write-Host '    Ctrl+Alt+1  -> so perifericos pro Windows' -ForegroundColor White
+Write-Host '    Ctrl+Alt+3  -> so perifericos pro Mac' -ForegroundColor White
 Write-Host ''
 Write-Host '  Terminal (apos reabrir):' -ForegroundColor Cyan
 Write-Host '    mac          -> troca tudo pro Mac' -ForegroundColor White
