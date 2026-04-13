@@ -233,15 +233,15 @@ public class HIDQuery
 "@
 
 foreach ($periph in $config.peripherals) {
-    $vid = [Convert]::ToUInt16($periph.vid, 16)
-    $pid = [Convert]::ToUInt16($periph.pid, 16)
+    $devVid = [Convert]::ToUInt16($periph.vid, 16)
+    $devPid = [Convert]::ToUInt16($periph.pid, 16)
 
     Write-Host "  $($periph.name) ($($periph.vid):$($periph.pid))" -ForegroundColor Yellow
     Write-Host "    Config feature index: $($periph.change_host_feature_index)"
 
     try {
         # Query feature 0x1814 (Change Host)
-        $featureIdx = [HIDQuery]::QueryFeatureIndex($vid, $pid, 0x1814)
+        $featureIdx = [HIDQuery]::QueryFeatureIndex($devVid, $devPid, 0x1814)
         if ($featureIdx -ge 0) {
             Write-Host "    Windows feature index: $featureIdx (0x$('{0:X2}' -f $featureIdx))" -ForegroundColor Green
             if ($featureIdx -ne $periph.change_host_feature_index) {
