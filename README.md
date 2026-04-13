@@ -35,6 +35,19 @@ windows       # troca tudo pro Windows (ou ⌃⌥W)
 mac-fix       # volta pro Mac (ou ⌃⌥M)
 ```
 
+### [`clipboard-share/`](clipboard-share/)
+Clipboard compartilhado entre Mac e Windows via rede local. Texto e arquivos até 50MB.
+
+```bash
+# No Mac — enviar pro Windows
+Cmd+Shift+C
+
+# No Windows — enviar pro Mac
+Ctrl+Shift+C
+
+# Colar: Cmd+V / Ctrl+V normal
+```
+
 ### `dotfiles/` *(em breve)*
 Configurações de shell, git, editor. Symlink para os locais corretos em cada OS.
 
