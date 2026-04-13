@@ -2,7 +2,7 @@
 
 Troca toda a estação de trabalho (2 monitores + periféricos Logitech) entre Windows PC e MacBook com um único comando.
 
-Usa o protocolo **DDC/CI** para enviar comandos de troca de input diretamente aos monitores via cabo, sem ferramentas externas no Windows (usa a API nativa `dxva2.dll`) e com [`m1ddc`](https://github.com/waydabber/m1ddc) no Mac (Apple Silicon).
+Usa o protocolo **DDC/CI** para enviar comandos de troca de input diretamente aos monitores via cabo, sem ferramentas externas no Windows (usa a API nativa `dxva2.dll`). No Mac usa [`m1ddc`](https://github.com/waydabber/m1ddc) para monitores via DisplayPort e [BetterDisplay](https://betterdisplay.pro/) para monitores via HDMI (m1ddc não suporta DDC/CI via HDMI no Apple Silicon).
 
 ## Hardware
 
@@ -31,13 +31,15 @@ windows
 ### No Mac — mudar pro Windows
 
 ```bash
-windows
+windows          # terminal
+# ou ⌃⌥W        # hotkey global (qualquer app)
 ```
 
 ### No Mac — voltar pro Mac (emergência)
 
 ```bash
-windows --reverse
+mac-fix          # terminal
+# ou ⌃⌥M        # hotkey global (qualquer app)
 ```
 
 > **Nota:** Após trocar os monitores, pressione o botão Easy Switch no teclado e no mouse para trocar o canal Bluetooth. Isso não é automatizável.
@@ -46,19 +48,23 @@ windows --reverse
 
 ```
 switch-station/
-├── config.json              # Mapeamento de inputs por monitor
+├── config.json              # Source of truth: monitores + periféricos (Win + Mac)
 ├── discover.ps1             # Descobre monitores e valores DDC/CI (Windows)
 ├── setup.ps1                # Registra aliases 'mac' e 'windows' no PowerShell
-├── switch-to-mac.ps1        # Script principal de troca (Windows)
+├── switch-to-mac.ps1        # Script principal (Windows): periféricos + monitores
 ├── switch-to-mac.bat        # Launcher .bat (double-click / taskbar)
 ├── switch-to-windows.bat    # Launcher .bat emergência (volta pro Windows)
 ├── lib/
 │   ├── DDC.psm1             # Módulo DDC/CI via dxva2.dll (zero dependências)
+│   ├── HIDSwitch.psm1       # Módulo HID++ Change Host via Windows HID API
 │   └── DisplayControl.psm1  # Módulo attach/detach de displays (auxiliar)
 └── mac/
-    ├── discover.sh           # Descobre monitores DDC/CI no Mac (m1ddc)
-    ├── setup.sh              # Instala m1ddc + registra aliases no zsh/bash
-    └── switch-to-windows.sh  # Script principal de troca (Mac)
+    ├── discover.sh           # Descobre monitores DDC/CI no Mac
+    ├── hid_switch            # Binário Swift/IOKit pra HID++ Change Host (macOS)
+    ├── hid_switch.swift      # Source do hid_switch
+    ├── hidapitester          # Ferramenta HID genérica (fallback)
+    ├── setup.sh              # Setup completo: instala deps, aliases, hotkeys
+    └── switch-to-windows.sh  # Script principal (Mac): periféricos + monitores
 ```
 
 ## Setup
@@ -75,15 +81,24 @@ Isso registra as funções `mac` e `windows` no `$PROFILE` do PowerShell. Reabra
 ### Mac (primeira vez)
 
 ```bash
-# Copiar a pasta mac/ para o Mac (ex: via AirDrop, USB, scp)
-cd ~/switch-station   # ou onde colocar
-chmod +x mac/*.sh
-./mac/setup.sh        # Instala m1ddc via Homebrew, registra aliases
-
-# Verificar os display numbers
-./mac/discover.sh
-# Editar mac/switch-to-windows.sh com os display numbers corretos se necessário
+cd ~/Projects/personal/workspace/switch-station   # ou onde clonou
+./mac/setup.sh
 ```
+
+O `setup.sh` faz tudo automaticamente:
+1. Instala dependências via Homebrew (m1ddc, jq, BetterDisplay, Hammerspoon)
+2. Registra aliases `windows` e `mac-fix` no zsh/bash
+3. Configura hotkeys globais via Hammerspoon (⌃⌥W / ⌃⌥M)
+
+**Único passo manual:** na primeira vez, habilitar Hammerspoon em **System Settings > Privacy & Security > Accessibility**.
+
+**Dependências:**
+- **m1ddc** — DDC/CI para monitores via DisplayPort
+- **BetterDisplay** — DDC/CI para monitores via HDMI (m1ddc não suporta HDMI no Apple Silicon)
+- **Hammerspoon** — hotkeys globais (⌃⌥W / ⌃⌥M)
+- **jq** — leitura do config.json
+
+Num Mac zerado, só precisa ter Homebrew instalado antes.
 
 ## Valores DDC/CI Descobertos
 
@@ -192,18 +207,24 @@ O comando DDC/CI é enviado pelo cabo de vídeo que conecta o Windows ao monitor
 
 ## config.json
 
+Fonte de verdade única para **ambos** os lados (Windows e Mac).
+
 ```json
 {
   "monitors": [
     {
       "name": "Alienware AW2725DF",
-      "match": "Alienware|AW2725",
+      "match_windows": "Alienware|AW2725",
+      "match_mac": "AW2725",
+      "mac_display": 1,
       "windows_input": 15,
       "mac_input": 19
     },
     {
       "name": "Samsung UR550",
-      "match": "Generic PnP",
+      "match_windows": "Generic PnP",
+      "match_mac": "LU28R55",
+      "mac_display": 2,
       "windows_input": 15,
       "mac_input": 5
     }
@@ -211,8 +232,22 @@ O comando DDC/CI é enviado pelo cabo de vídeo que conecta o Windows ao monitor
 }
 ```
 
-- **`match`**: Regex aplicado no `szPhysicalMonitorDescription` retornado pelo Windows. O Samsung aparece como "Generic PnP Monitor" no DDC/CI.
-- **`windows_input`** / **`mac_input`**: Valores VCP 0x60 para cada input.
+| Campo | Descrição |
+|---|---|
+| `match_windows` | Regex aplicado no `szPhysicalMonitorDescription` retornado pelo Windows. Samsung aparece como "Generic PnP Monitor". |
+| `match_mac` | Texto para identificar o monitor no `m1ddc display list` (ex: `AW2725`, `LU28R55`). |
+| `mac_display` | Número do display no m1ddc (1-based). Rode `./mac/discover.sh` para verificar. |
+| `mac_tool` | Ferramenta no Mac: `m1ddc` (monitores via DP) ou `betterdisplay` (monitores via HDMI). |
+| `windows_input` / `mac_input` | Valores VCP 0x60 para cada input. |
+
+### Periféricos
+
+| Campo | Descrição |
+|---|---|
+| `vid` / `pid` | Vendor/Product ID do dispositivo Bluetooth (ex: `046D`/`B35B` para MX Keys). |
+| `change_host_feature_index` | Feature index HID++ do Change Host (descoberto via protocol query). |
+| `mac_hid_tool` | `hid_switch` (Swift/IOKit). |
+| `windows_channel` / `mac_channel` | Índice do canal (0-based: 0=canal 1, 1=canal 2, 2=canal 3). |
 
 ## Troubleshooting
 

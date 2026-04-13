@@ -2,15 +2,41 @@
   "monitors": [
     {
       "name": "Alienware AW2725DF",
-      "match": "Alienware|AW2725",
+      "match_windows": "Alienware|AW2725",
+      "match_mac": "AW2725DF",
+      "mac_display": 1,
+      "mac_tool": "m1ddc",
       "windows_input": 15,
       "mac_input": 19
     },
     {
       "name": "Samsung UR550",
-      "match": "Generic PnP",
+      "match_windows": "Generic PnP",
+      "match_mac": "LU28R55",
+      "mac_display": 2,
+      "mac_tool": "betterdisplay",
       "windows_input": 15,
       "mac_input": 5
+    }
+  ],
+  "peripherals": [
+    {
+      "name": "Logitech MX Keys",
+      "vid": "046D",
+      "pid": "B35B",
+      "change_host_feature_index": 9,
+      "mac_hid_tool": "hid_switch",
+      "windows_channel": 0,
+      "mac_channel": 2
+    },
+    {
+      "name": "Logitech MX Anywhere 3S",
+      "vid": "046D",
+      "pid": "B037",
+      "change_host_feature_index": 11,
+      "mac_hid_tool": "hid_switch",
+      "windows_channel": 0,
+      "mac_channel": 2
     }
   ]
 }

@@ -3,46 +3,73 @@
 # Rode uma vez: ./setup.sh
 #
 # O que faz:
-#   1. Instala m1ddc via Homebrew
-#   2. Registra aliases 'windows' e 'mac-fix' no shell
-#   3. Cria Automator Quick Actions para hotkeys globais
-#   4. Instrui como atribuir Ctrl+Opt+W / Ctrl+Opt+M
+#   1. Instala dependências (m1ddc, jq, BetterDisplay) via Homebrew
+#   2. Torna scripts executáveis
+#   3. Registra aliases 'windows' e 'mac-fix' no shell
+#   4. Cria Automator Quick Actions para hotkeys globais
+#   5. Instrui como atribuir Ctrl+Opt+W / Ctrl+Opt+M
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SWITCH_STATION_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo ""
 echo "  === Switch Station — Setup macOS ==="
 echo ""
 
-# ── 1. Instalar m1ddc ──────────────────────────────────────────────
-if command -v m1ddc &>/dev/null; then
-    echo "  [OK] m1ddc já instalado"
-else
-    echo "  Instalando m1ddc via Homebrew..."
-    if ! command -v brew &>/dev/null; then
-        echo "  [X] Homebrew não encontrado! Instale: https://brew.sh"
-        exit 1
+# ── 1. Verificar Homebrew ────────────────────────────────────────
+if ! command -v brew &>/dev/null; then
+    echo "  [X] Homebrew não encontrado!"
+    echo "      Instale com: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+    exit 1
+fi
+echo "  [OK] Homebrew encontrado"
+
+# ── 2. Instalar dependências ─────────────────────────────────────
+install_if_missing() {
+    local cmd="$1"
+    local pkg="${2:-$1}"
+    if command -v "$cmd" &>/dev/null; then
+        echo "  [OK] $cmd já instalado"
+    else
+        echo "  Instalando $pkg via Homebrew..."
+        brew install "$pkg"
+        echo "  [OK] $pkg instalado"
     fi
-    brew install m1ddc
-    echo "  [OK] m1ddc instalado"
+}
+
+install_if_missing m1ddc
+install_if_missing jq
+
+# BetterDisplay (cask) — necessário pro Samsung via HDMI (m1ddc não suporta DDC/CI via HDMI)
+if command -v betterdisplaycli &>/dev/null; then
+    echo "  [OK] betterdisplaycli já instalado"
+else
+    echo "  Instalando BetterDisplay via Homebrew..."
+    brew install --cask betterdisplay
+    echo "  [OK] BetterDisplay instalado"
+    echo "  [!] BetterDisplay precisa estar rodando. Abrindo..."
+    open -a BetterDisplay 2>/dev/null || true
 fi
 
-# ── 2. Tornar scripts executáveis ──────────────────────────────────
+# ── 3. Tornar scripts executáveis ────────────────────────────────
 chmod +x "$SCRIPT_DIR/switch-to-windows.sh"
 chmod +x "$SCRIPT_DIR/discover.sh"
 echo "  [OK] Scripts marcados como executáveis"
 
-# ── 3. Aliases no shell ────────────────────────────────────────────
+# ── 4. Aliases no shell ──────────────────────────────────────────
 SHELL_RC="$HOME/.zshrc"
 if [[ "$SHELL" == *"bash"* ]]; then
     SHELL_RC="$HOME/.bashrc"
 fi
 
+# Criar o arquivo se não existir (Mac zerado)
+touch "$SHELL_RC"
+
 MARKER="# === switch-station ==="
 if grep -q "$MARKER" "$SHELL_RC" 2>/dev/null; then
-    # Atualizar bloco existente
+    # Remover bloco existente antes de recriar
     sed -i '' "/$MARKER/,/$MARKER/d" "$SHELL_RC"
 fi
 
@@ -53,9 +80,9 @@ alias windows="$SCRIPT_DIR/switch-to-windows.sh"
 alias mac-fix="$SCRIPT_DIR/switch-to-windows.sh --reverse"
 $MARKER
 EOF
-echo "  [OK] Aliases registrados no $SHELL_RC"
+echo "  [OK] Aliases registrados em $SHELL_RC"
 
-# ── 4. Automator Quick Actions (hotkeys globais) ───────────────────
+# ── 5. Automator Quick Actions (hotkeys globais) ─────────────────
 SERVICES_DIR="$HOME/Library/Services"
 mkdir -p "$SERVICES_DIR"
 
@@ -65,11 +92,9 @@ create_quick_action() {
     local workflow_dir="$SERVICES_DIR/$name.workflow"
     local contents_dir="$workflow_dir/Contents"
 
-    # Remover se já existir
     rm -rf "$workflow_dir"
     mkdir -p "$contents_dir"
 
-    # Info.plist — define como Quick Action (Service)
     cat > "$contents_dir/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -92,7 +117,6 @@ create_quick_action() {
 PLIST
     sed -i '' "s|WORKFLOW_NAME|$name|g" "$contents_dir/Info.plist"
 
-    # document.wflow — o workflow Automator que executa o shell script
     cat > "$contents_dir/document.wflow" << WFLOW
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -211,25 +235,60 @@ WFLOW
 create_quick_action "Switch to Windows" "$SCRIPT_DIR/switch-to-windows.sh"
 create_quick_action "Switch to Mac" "$SCRIPT_DIR/switch-to-windows.sh --reverse"
 
-# ── Resumo ──────────────────────────────────────────────────────────
+# ── 6. Hammerspoon — Hotkeys globais ─────────────────────────────
+# Hammerspoon é mais confiável que Automator Quick Actions pra hotkeys
+if ! command -v hs &>/dev/null; then
+    echo "  Instalando Hammerspoon via Homebrew..."
+    brew install --cask hammerspoon
+    echo "  [OK] Hammerspoon instalado"
+else
+    echo "  [OK] Hammerspoon já instalado"
+fi
+
+HAMMERSPOON_DIR="$HOME/.hammerspoon"
+mkdir -p "$HAMMERSPOON_DIR"
+
+# Marker pra não sobrescrever config existente do usuario
+HS_MARKER="-- === switch-station ==="
+HS_INIT="$HAMMERSPOON_DIR/init.lua"
+touch "$HS_INIT"
+
+if grep -q "$HS_MARKER" "$HS_INIT" 2>/dev/null; then
+    # Remover bloco existente (entre markers)
+    sed -i '' "/$HS_MARKER/,/$HS_MARKER/d" "$HS_INIT"
+fi
+
+cat >> "$HS_INIT" << EOF
+
+$HS_MARKER
+-- Ctrl+Opt+W = troca pro Windows | Ctrl+Opt+M = volta pro Mac
+local switchStation = "$SCRIPT_DIR/switch-to-windows.sh"
+hs.hotkey.bind({"ctrl", "alt"}, "W", function()
+    hs.task.new("/bin/bash", nil, {switchStation}):start()
+end)
+hs.hotkey.bind({"ctrl", "alt"}, "M", function()
+    hs.task.new("/bin/bash", nil, {switchStation, "--reverse"}):start()
+end)
+$HS_MARKER
+EOF
+
+# Abrir Hammerspoon se não estiver rodando
+open -a Hammerspoon 2>/dev/null || true
+echo "  [OK] Hotkeys registradas via Hammerspoon: ⌃⌥W (Windows) / ⌃⌥M (Mac)"
+echo "  [!] Na primeira vez: habilitar Hammerspoon em System Settings > Privacy > Accessibility"
+
+# ── Resumo ────────────────────────────────────────────────────────
 echo ""
-echo "  Setup completo!" -e
+echo "  Setup completo!"
 echo ""
-echo "  Terminal (após reabrir):"
+echo "  Terminal (após reabrir ou rodar: source $SHELL_RC):"
 echo "    windows   -> troca tudo pro Windows"
 echo "    mac-fix   -> volta pro Mac (emergência)"
 echo ""
-echo "  ┌─────────────────────────────────────────────────────────┐"
-echo "  │  PASSO MANUAL — Atribuir hotkeys globais:              │"
-echo "  │                                                         │"
-echo "  │  1. System Settings > Keyboard > Keyboard Shortcuts     │"
-echo "  │  2. Clique em 'Services' (ou 'Serviços')               │"
-echo "  │  3. Em 'General', encontre:                             │"
-echo "  │     • Switch to Windows -> atribua ⌃⌥W (Ctrl+Opt+W)   │"
-echo "  │     • Switch to Mac     -> atribua ⌃⌥M (Ctrl+Opt+M)   │"
-echo "  │  4. Pronto! Funciona de qualquer app.                   │"
-echo "  └─────────────────────────────────────────────────────────┘"
+echo "  Hotkeys globais (funcionam de qualquer app):"
+echo "    ⌃⌥W (Ctrl+Opt+W) -> troca pro Windows"
+echo "    ⌃⌥M (Ctrl+Opt+M) -> volta pro Mac"
 echo ""
 echo "  Próximo passo: rode ./discover.sh para verificar"
-echo "  os display numbers e valores de input do m1ddc."
+echo "  os display numbers e valores de input."
 echo ""

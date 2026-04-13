@@ -21,7 +21,7 @@ Configuração cross-platform da estação de trabalho do Marco. Tudo que precis
 ## Módulos
 
 ### [`switch-station/`](switch-station/)
-KVM via software — troca os 2 monitores entre Windows e Mac com um único comando usando DDC/CI. Zero dependências externas no Windows (usa `dxva2.dll`), `m1ddc` no Mac.
+KVM via software — troca os 2 monitores entre Windows e Mac com um único comando usando DDC/CI. Zero dependências externas no Windows (usa `dxva2.dll`), `m1ddc` + `BetterDisplay` no Mac.
 
 ```powershell
 # No Windows
@@ -31,8 +31,8 @@ windows       # volta pro Windows
 
 ```bash
 # No Mac
-windows       # troca tudo pro Windows
-windows -r    # volta pro Mac
+windows       # troca tudo pro Windows (ou ⌃⌥W)
+mac-fix       # volta pro Mac (ou ⌃⌥M)
 ```
 
 ### `dotfiles/` *(em breve)*
