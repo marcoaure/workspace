@@ -1,0 +1,6 @@
+{
+  "port": 9876,
+  "remote_host": "CHANGE_ME.local",
+  "temp_dir": "clipboard-share-temp",
+  "max_file_size_mb": 50
+}
