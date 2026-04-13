@@ -40,7 +40,7 @@ if ($files -and $files.Count -gt 0) {
 
         $response = Invoke-WebRequest -Uri $url -Method POST -Body $body `
             -ContentType "multipart/form-data; boundary=$boundary" `
-            -TimeoutSec 10 -ErrorAction Stop
+            -TimeoutSec 10 -UseBasicParsing -ErrorAction Stop
 
         Write-Host "[OK] Arquivo enviado: $fileName"
     } catch {
@@ -60,7 +60,7 @@ if ($files -and $files.Count -gt 0) {
         $jsonBody = @{ type = 'text'; data = $textJoined } | ConvertTo-Json -Compress
         $response = Invoke-WebRequest -Uri $url -Method POST -Body $jsonBody `
             -ContentType 'application/json; charset=utf-8' `
-            -TimeoutSec 10 -ErrorAction Stop
+            -TimeoutSec 10 -UseBasicParsing -ErrorAction Stop
 
         Write-Host "[OK] Texto enviado ($($textJoined.Length) chars)"
     } catch {

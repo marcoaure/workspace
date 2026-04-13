@@ -1,6 +1,6 @@
 {
   "port": 9876,
-  "remote_host": "mau.local",
+  "remote_host": "MacBook-Pro-de-Marco.local",
   "temp_dir": "clipboard-share-temp",
   "max_file_size_mb": 50
 }
